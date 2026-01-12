@@ -1,0 +1,1621 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>都道府県３ヒントクイズ！全国制覇</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700&family=Zen+Kurenaido&display=swap" rel="stylesheet">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    
+    <style>
+        :root {
+            --primary-color: #FF8BA7;
+            --secondary-color: #FFC6C7;
+            --accent-color: #8ED1FC;
+            --bg-color: #f4f9fc;
+            --text-color: #444;
+            --white: #ffffff;
+            --beginner-color: #FFD166;
+            --advanced-color: #EF476F;
+        }
+
+        body {
+            font-family: 'M PLUS Rounded 1c', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            user-select: none;
+            box-sizing: border-box;
+        }
+
+        /* フッターのスタイル */
+        footer {
+            margin-top: auto;
+            padding: 20px 0 0 0;
+            text-align: center;
+            color: #888;
+            font-size: 0.9rem;
+            width: 100%;
+        }
+
+        /* 共通ヘッダースタイル */
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+            background: var(--white);
+            padding: 10px 40px;
+            border-radius: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border-bottom: 4px solid var(--accent-color);
+            width: 100%;
+            max-width: 1200px;
+            box-sizing: border-box;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.8rem;
+            color: #333;
+            letter-spacing: 0.05em;
+        }
+
+        .status-bar {
+            margin-top: 5px;
+            font-size: 1.1rem;
+            color: #666;
+        }
+
+        .btn-reset {
+            position: absolute;
+            right: 20px;
+            background-color: #f8f8f8;
+            color: #555;
+            border: 2px solid #ddd;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 2px 0 #ccc;
+        }
+        .btn-reset:hover {
+            background-color: #eee;
+            transform: translateY(1px);
+            box-shadow: 0 1px 0 #ccc;
+        }
+        .btn-reset:active {
+            transform: translateY(2px);
+            box-shadow: none;
+        }
+
+        /* Start Overlay */
+        .start-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.98);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 3000;
+            overflow-y: auto; 
+            padding-bottom: 20px;
+            box-sizing: border-box;
+        }
+        
+        .start-header {
+            width: 100%;
+            background: var(--white);
+            padding: 15px 0;
+            text-align: center;
+            border-bottom: 4px solid var(--accent-color);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            margin-bottom: 30px;
+        }
+
+        .start-header h1 {
+            font-size: 2rem;
+            color: #333;
+            margin: 0;
+        }
+
+        .start-content {
+            width: 100%;
+            max-width: 800px;
+            padding: 0 20px;
+            text-align: center;
+            flex: 1; /* フッターを下に押しやるために伸長させる */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .rule-box {
+            background-color: #fff;
+            border: 3px dashed var(--primary-color);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 30px;
+            display: inline-block;
+            text-align: left;
+        }
+
+        .rule-box h2 {
+            margin: 0 0 10px 0;
+            color: var(--primary-color);
+            font-size: 1.3rem;
+            text-align: center;
+        }
+
+        .rule-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        .rule-list li::before {
+            content: "✅ ";
+        }
+
+        .mode-select {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .start-btn {
+            color: white;
+            font-size: 1.5rem;
+            padding: 20px 40px;
+            border-radius: 20px;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 220px;
+            box-sizing: border-box;
+        }
+        
+        .start-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .start-btn.beginner {
+            background-color: var(--beginner-color);
+            box-shadow: 0 6px 0 #E0B040;
+        }
+
+        .start-btn.advanced {
+            background-color: var(--advanced-color);
+            box-shadow: 0 6px 0 #C03050;
+        }
+
+        .start-btn span {
+            font-size: 0.9rem;
+            margin-top: 5px;
+            opacity: 0.95;
+            font-weight: normal;
+        }
+
+        /* Game Layout */
+        .game-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 25px;
+            width: 100%;
+            max-width: 1200px;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .quiz-panel {
+            flex: 1;
+            min-width: 300px;
+            max-width: 400px;
+            background: var(--white);
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            position: relative; /* バッジの位置調整用 */
+        }
+
+        /* コースバッジ */
+        .course-badge {
+            align-self: center;
+            background-color: var(--beginner-color);
+            color: white;
+            font-weight: bold;
+            padding: 5px 20px;
+            border-radius: 20px;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+            box-shadow: 0 3px 0 rgba(0,0,0,0.15);
+            transition: background-color 0.3s;
+        }
+
+        .hint-box {
+            background-color: #fffbf0;
+            width: 100%;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            border: 3px solid #ffe082;
+            min-height: 220px;
+            position: relative;
+            box-sizing: border-box;
+            transition: all 0.3s;
+        }
+
+        .hint-text {
+            font-size: 1.25rem;
+            margin: 12px 0;
+            display: none;
+            animation: slideIn 0.4s ease-out;
+            line-height: 1.6;
+            font-family: 'Zen Kurenaido', sans-serif;
+            font-weight: 600;
+        }
+
+        .hint-text.visible {
+            display: block;
+        }
+
+        .hint-label {
+            display: inline-block;
+            background: #FFD166;
+            color: #fff;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            margin-right: 8px;
+            font-weight: bold;
+            box-shadow: 0 2px 0 rgba(0,0,0,0.1);
+            transition: background-color 0.3s;
+        }
+
+        /* 上級モード用のスタイル */
+        .quiz-panel.advanced-mode .course-badge {
+            background-color: var(--advanced-color);
+        }
+        
+        .quiz-panel.advanced-mode .hint-box {
+            background-color: #fff0f3; /* 薄いピンク */
+            border-color: var(--advanced-color);
+        }
+
+        .quiz-panel.advanced-mode .hint-label {
+            background-color: var(--advanced-color);
+        }
+
+        .controls {
+            margin-bottom: 20px;
+            width: 100%;
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            border: none;
+            outline: none;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s ease;
+        }
+
+        button:active {
+            transform: translateY(2px);
+        }
+
+        .btn-next-hint {
+            background-color: var(--accent-color);
+            color: #fff;
+            width: 100%;
+            padding: 14px;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            box-shadow: 0 4px 0 #67b6eb;
+            text-shadow: 1px 1px 0 rgba(0,0,0,0.1);
+        }
+        
+        .btn-next-hint:hover {
+            background-color: #7ac7f5;
+        }
+        
+        .btn-next-panel {
+            background-color: var(--primary-color);
+            color: #fff;
+            width: 100%;
+            padding: 14px;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            box-shadow: 0 4px 0 #e06c88;
+            text-shadow: 1px 1px 0 rgba(0,0,0,0.1);
+            display: none;
+        }
+        .btn-next-panel:hover {
+            filter: brightness(1.1);
+        }
+
+        /* 選択肢 */
+        .choices-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            width: 100%;
+        }
+
+        .btn-choice {
+            padding: 15px 10px;
+            border-radius: 15px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border: none;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.15);
+            min-height: 65px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #444; 
+            transition: transform 0.1s, filter 0.1s, background-color 0.2s;
+            position: relative;
+        }
+
+        .btn-choice:hover {
+            filter: brightness(1.1);
+        }
+
+        .btn-choice:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 rgba(0,0,0,0.15);
+        }
+
+        .btn-choice.wrong {
+            background-color: #dcdcdc !important;
+            color: #999;
+            box-shadow: none;
+            transform: translateY(2px);
+            cursor: not-allowed;
+        }
+        .btn-choice.wrong::after {
+            content: "×";
+            position: absolute;
+            font-size: 2rem;
+            color: #888;
+            opacity: 0.5;
+        }
+
+        .btn-choice.red { background-color: #FF8BA7; }
+        .btn-choice.blue { background-color: #8ED1FC; }
+        .btn-choice.green { background-color: #88D8B0; }
+        .btn-choice.orange { background-color: #FFD166; }
+
+        /* Right Panel */
+        .right-panel {
+            flex: 2;
+            min-width: 320px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            height: 600px;
+        }
+
+        .real-map-wrapper {
+            background: white;
+            padding: 10px;
+            border-radius: 20px;
+            box-shadow: 0 8px 15px rgba(0,0,0,0.05);
+            border: 4px solid #fff;
+            width: 100%;
+            height: 100%; 
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+        }
+
+        #leaflet-map {
+            flex: 1;
+            width: 100%;
+            height: 100%; 
+            border-radius: 15px;
+            z-index: 1;
+        }
+
+        /* 旗アイコン */
+        .custom-flag {
+            filter: drop-shadow(1px 2px 2px rgba(0,0,0,0.3));
+            transition: transform 0.2s;
+        }
+        .custom-flag:hover {
+            transform: scale(1.2) translateY(-2px);
+            z-index: 1000 !important;
+        }
+
+        /* オーバーレイ */
+        .map-overlay-message {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.7);
+            backdrop-filter: blur(2px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            flex-direction: column;
+            text-align: center;
+            color: #555;
+            font-weight: bold;
+            font-size: 1.2rem;
+            transition: opacity 0.5s ease-out;
+            pointer-events: none;
+        }
+
+        .map-overlay-message.fade-out {
+            opacity: 0;
+        }
+
+        .map-overlay-message p {
+            background: rgba(255,255,255,0.95);
+            padding: 20px 40px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border: 3px solid var(--accent-color);
+        }
+        
+        .btn-google-map {
+            margin-top: 15px;
+            background: #fff;
+            color: #4285F4;
+            border: 2px solid #4285F4;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-size: 1rem;
+            font-weight: bold;
+            display: inline-block;
+            text-decoration: none;
+            cursor: pointer;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: background 0.3s;
+            z-index: 500; 
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+        }
+        .btn-google-map:hover {
+            background: #e8f0fe;
+        }
+
+        /* スタートボタン用のスタイル（クイズパネル内） */
+        .btn-start-game {
+            background-color: #FF8BA7;
+            color: white;
+            box-shadow: 0 4px 0 #e06c88;
+            font-size: 1.3rem;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        /* Confirm Modal */
+        .confirm-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.8);
+            backdrop-filter: blur(5px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2500;
+        }
+        
+        .confirm-box {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border: 3px solid #ccc;
+            max-width: 90%;
+        }
+
+        .confirm-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #555;
+            margin-bottom: 15px;
+        }
+
+        .confirm-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .btn-cancel {
+            background-color: #eee;
+            color: #555;
+            padding: 10px 25px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 1rem;
+        }
+        .btn-cancel:hover {
+            background-color: #ddd;
+        }
+
+        .btn-ok {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 10px 25px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 1rem;
+            box-shadow: 0 3px 0 #e06c88;
+        }
+        .btn-ok:hover {
+            filter: brightness(1.1);
+            transform: translateY(1px);
+        }
+
+        /* Feedback Modal */
+        .feedback-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.8);
+            backdrop-filter: blur(5px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        .feedback-box {
+            background: white;
+            padding: 40px;
+            border-radius: 30px;
+            text-align: center;
+            animation: bounceIn 0.5s;
+            max-width: 90%;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+            border: 4px solid var(--primary-color);
+        }
+
+        .feedback-title {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            font-family: 'Zen Kurenaido', sans-serif;
+        }
+
+        .feedback-desc {
+            font-size: 1.4rem;
+            margin-bottom: 30px;
+            color: #666;
+        }
+
+        .btn-modal-action {
+            background-color: var(--primary-color);
+            color: white;
+            font-size: 1.3rem;
+            padding: 15px 50px;
+            border-radius: 50px;
+            box-shadow: 0 5px 0 #e06c88;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .btn-modal-action:hover {
+            transform: scale(1.05);
+        }
+
+        /* 紙吹雪用のキャンバス */
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 5000;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        @keyframes bounceIn {
+            0% { transform: scale(0.9); }
+            100% { transform: scale(1.0); }
+        }
+
+        @media (max-width: 768px) {
+            .game-container {
+                flex-direction: column-reverse;
+            }
+            .right-panel {
+                width: 100%;
+                height: 400px;
+            }
+            h1 { font-size: 1.4rem; }
+            .btn-reset { position: relative; right: auto; margin-top: 10px;}
+            header { flex-direction: column; padding: 15px; }
+            .mode-select { flex-direction: column; }
+        }
+    </style>
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+</head>
+<body>
+
+<!-- 紙吹雪用キャンバス -->
+<canvas id="confetti-canvas"></canvas>
+
+<div id="start-overlay" class="start-overlay">
+    <div class="start-header">
+        <h1>🗾 都道府県３ヒントクイズ</h1>
+    </div>
+    <div class="start-content">
+        <div class="rule-box">
+            <h2>あそびかた</h2>
+            <ul class="rule-list">
+                <li>ヒントが３つ出ます。</li>
+                <li>わかったら、下のボタンから答えを選んでね。</li>
+                <li>何度でもやり直せるよ。</li>
+                <li>正解すると地図に旗が立つよ。全国制覇を目指そう！</li>
+            </ul>
+        </div>
+
+        <p style="margin-bottom: 20px; font-size: 1.2rem; color:#555; font-weight:bold;">コースをえらんでね</p>
+        <div class="mode-select">
+            <button class="start-btn beginner" onclick="startGame('beginner')">
+                初級コース
+                <span>グルメ・観光地など<br>（やさしい）</span>
+            </button>
+            <button class="start-btn advanced" onclick="startGame('advanced')">
+                上級コース
+                <span>伝統・データ・旧国名<br>（難しい）</span>
+            </button>
+        </div>
+    </div>
+    <footer>
+        ©ＩＣＴ支援の杜　都道府県３ヒントクイズ
+    </footer>
+</div>
+
+<header>
+    <div class="header-content">
+        <h1>🗾 都道府県３ヒントクイズ</h1>
+        <div class="status-bar">
+            めざせ全国制覇！ 残り <span id="remaining-count" style="color:#FF6F61; font-size:1.6rem; font-weight:800;">47</span> 県
+        </div>
+    </div>
+    <!-- 2つのボタンを配置 -->
+    <div style="position: absolute; right: 20px; display: flex; gap: 10px;">
+        <button class="btn-reset" style="position: relative; right: auto;" onclick="backToTitle()">スタートに戻る</button>
+        <button class="btn-reset" style="position: relative; right: auto;" onclick="confirmReset()">はじめから</button>
+    </div>
+</header>
+
+<div class="game-container">
+    <div class="quiz-panel">
+        <div id="course-badge" class="course-badge">初級コース</div>
+        <div class="hint-box" id="hint-container">
+            <div id="hint1" class="hint-text"><span class="hint-label">ヒント1</span><span id="text1">...</span></div>
+            <div id="hint2" class="hint-text"><span class="hint-label">ヒント2</span><span id="text2">...</span></div>
+            <div id="hint3" class="hint-text"><span class="hint-label">ヒント3</span><span id="text3">...</span></div>
+        </div>
+
+        <div class="controls">
+            <!-- 2回目以降はヒントボタン -->
+            <button id="btn-show-hint" class="btn-next-hint" onclick="handleMainButton()">クイズスタート！</button>
+            <button id="btn-next-panel" class="btn-next-panel" onclick="nextQuestion()">次の問題へ ➡</button>
+        </div>
+
+        <div class="choices-grid" id="choices-container">
+            <!-- Buttons generated by JS -->
+        </div>
+    </div>
+
+    <div class="right-panel">
+        <div class="real-map-wrapper">
+            <div id="leaflet-map"></div>
+            <div id="map-overlay" class="map-overlay-message">
+                <p>
+                    ここに詳しい地図が表示されます<br>
+                    正解するとその場所が見えるよ！
+                </p>
+            </div>
+            <a id="btn-gmap-link" class="btn-google-map" href="#" target="_blank" style="display:none;">Googleマップで見る</a>
+        </div>
+    </div>
+</div>
+
+<footer>
+    ©ＩＣＴ支援の杜　都道府県３ヒントクイズ
+</footer>
+
+<div class="feedback-overlay" id="feedback-overlay">
+    <div class="feedback-box">
+        <div class="feedback-title" id="feedback-title">⭕ せいかい！</div>
+        <div class="feedback-desc" id="feedback-desc">すごい！その通り！</div>
+        <button id="btn-modal-action" class="btn-modal-action">次の問題へ</button>
+    </div>
+</div>
+
+<!-- Reset Confirm Overlay -->
+<div class="confirm-overlay" id="confirm-overlay">
+    <div class="confirm-box">
+        <div class="confirm-title">確認</div>
+        <div style="margin-bottom: 20px; line-height: 1.5; color: #666;">
+            これまでの記録が消えて<br>最初からになります。<br>よろしいですか？
+        </div>
+        <div class="confirm-buttons">
+            <button class="btn-cancel" onclick="hideConfirmReset()">キャンセル</button>
+            <button class="btn-ok" onclick="executeReset()">はじめから</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Audio Context (Singleton)
+    window.gameAudioCtx = window.gameAudioCtx || null;
+
+    function initAudio() {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!window.gameAudioCtx) {
+            window.gameAudioCtx = new AudioContext();
+        }
+        if (window.gameAudioCtx.state === 'suspended') {
+            window.gameAudioCtx.resume();
+        }
+    }
+
+    // 地域ごとの色定義（重要：これがないとエラーになります）
+    const regionColors = {
+        "北海道": "#6F6FDF",
+        "東北": "#6FDF6F",
+        "関東": "#6FDFDF",
+        "中部": "#DF6F6F",
+        "近畿": "#DFDF6F",
+        "中国": "#DF6FDF",
+        "四国": "#DFA56F",
+        "九州・沖縄": "#A56FDF"
+    };
+
+    function playCorrectSound() {
+        initAudio();
+        if (!window.gameAudioCtx) return;
+        const t = window.gameAudioCtx.currentTime;
+        const osc = window.gameAudioCtx.createOscillator();
+        const gain = window.gameAudioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(660, t);
+        osc.frequency.setValueAtTime(880, t + 0.1);
+        gain.gain.setValueAtTime(0.3, t);
+        gain.gain.linearRampToValueAtTime(0, t + 0.6);
+        osc.connect(gain);
+        gain.connect(window.gameAudioCtx.destination);
+        osc.start(t);
+        osc.stop(t + 0.6);
+    }
+
+    function playWrongSound() {
+        initAudio();
+        if (!window.gameAudioCtx) return;
+        const t = window.gameAudioCtx.currentTime;
+        const osc = window.gameAudioCtx.createOscillator();
+        const gain = window.gameAudioCtx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(150, t);
+        osc.frequency.linearRampToValueAtTime(100, t + 0.3);
+        gain.gain.setValueAtTime(0.3, t);
+        gain.gain.linearRampToValueAtTime(0, t + 0.3);
+        osc.connect(gain);
+        gain.connect(window.gameAudioCtx.destination);
+        osc.start(t);
+        osc.stop(t + 0.4);
+    }
+
+    function playFanfare() {
+        initAudio();
+        if (!window.gameAudioCtx) return;
+        const t = window.gameAudioCtx.currentTime;
+        const melody = [523.25, 659.25, 783.99, 1046.50, 0, 783.99, 1046.50];
+        const durations = [0.1, 0.1, 0.1, 0.4, 0.1, 0.1, 0.8];
+        let startTime = t;
+
+        melody.forEach((freq, i) => {
+            if (freq > 0) {
+                const osc = window.gameAudioCtx.createOscillator();
+                const gain = window.gameAudioCtx.createGain();
+                osc.type = 'triangle'; 
+                osc.frequency.setValueAtTime(freq, startTime);
+                gain.gain.setValueAtTime(0.3, startTime);
+                gain.gain.linearRampToValueAtTime(0, startTime + durations[i]);
+                osc.connect(gain);
+                gain.connect(window.gameAudioCtx.destination);
+                osc.start(startTime);
+                osc.stop(startTime + durations[i]);
+            }
+            startTime += durations[i];
+        });
+    }
+
+    // 都道府県データ
+    const prefectures = [
+        { id: 1, name: "北海道", region: "北海道", lat: 43.06417, lng: 141.34694, rivals: [47, 3, 20], 
+          hints: {
+            beginner: ["ジンギスカンという、羊のお肉を焼く料理が有名です。", "夏にはラベンダー畑が一面に広がります。", "日本で一番北にあり、面積が一番大きいです。", "「雪まつり」で大きな雪像が作られます。", "野菜たっぷりの「スープカレー」が人気です。", "流氷の天使「クリオネ」が見られます。"],
+            advanced: ["砂糖の原料になる「てんさい（ビート）」の生産量が日本一です。", "五稜郭（ごりょうかく）という星の形をしたお城の跡があります。", "昔は「蝦夷地（えぞち）」と呼ばれていました。", "サケ（鮭）の漁獲量が日本一です。", "日本で一番市町村の数が多い都道府県です。", "世界自然遺産の「知床（しれとこ）」があります。"]
+          }
+        },
+        { id: 2, name: "青森県", region: "東北", lat: 40.82444, lng: 140.74, rivals: [20, 5, 3],
+          hints: {
+            beginner: ["お鍋に割ったおせんべいを入れて食べる料理があります。", "夏には大きな灯籠（とうろう）の山車が出るお祭りがあります。", "本州の一番北にあり、赤い果物の生産が日本一です。", "たくさんの種類の海鮮を乗せた「のっけ丼」が楽しめます。", "一番北にある「大間」のマグロはとても高級です。", "シジミで有名な「十三湖」があります。"],
+            advanced: ["生産量日本一の野菜は、ニンニクやゴボウです。", "日本最大級の砂丘がありますが、自衛隊の敷地で一般の人は入れません。", "恐山（おそれざん）という日本三大霊場の一つがあります。", "世界遺産の「三内丸山遺跡」があります。", "「津軽塗」という伝統工芸品があります。", "青函トンネルで北海道とつながっています。"]
+          }
+        },
+        { id: 3, name: "岩手県", region: "東北", lat: 39.70361, lng: 141.1525, rivals: [1, 20, 4],
+          hints: {
+            beginner: ["お椀に入った一口サイズのそばをどんどん食べる料理が有名です。", "有名な農場があり、乳製品が人気です。", "北海道の次に面積が大きく、リアス海岸があります。", "麺が透明でコシがある「冷麺」が有名です。", "肉味噌をかけた「ジャージャー麺」が名物です。", "「雨ニモマケズ」を書いた宮沢賢治の出身地です。"],
+            advanced: ["「南部鉄器」という黒くて重厚な伝統工芸品が有名です。", "平泉（ひらいずみ）には金色に輝くお堂がある中尊寺があります。", "「じぇじぇじぇ」という方言が流行語になりました。", "日本最古の洋式高炉跡「橋野鉄鉱山」があります。", "漆（うるし）の生産量が日本一です。", "ビールの原料、ホップの生産量が日本一です。"]
+          }
+        },
+        { id: 4, name: "宮城県", region: "東北", lat: 38.26889, lng: 140.87194, rivals: [40, 13, 3],
+          hints: {
+            beginner: ["すりつぶした枝豆をお餅にからめるスイーツが有名です。", "厚切りの「牛タン」焼きが名物です。", "日本三景の一つ、たくさんの島が浮かぶ景色があります。", "魚のすり身を笹の葉の形に焼いたものが有名です。", "冷やし中華発祥の地と言われています。", "七夕（たなばた）祭りがとても有名です。"],
+            advanced: ["伝統工芸品「こけし」の生産が盛んです。", "「独眼竜」と呼ばれた武将が治めていた場所です。", "サメの漁獲量が日本一の気仙沼（けせんぬま）があります。", "パプリカの生産量が日本一です。", "「萩の月」というお菓子が有名です。", "東北地方で一番人口が多い県です。"]
+          }
+        },
+        { id: 5, name: "秋田県", region: "東北", lat: 39.71861, lng: 140.1025, rivals: [15, 2, 6],
+          hints: {
+            beginner: ["ご飯をつぶして棒に巻きつけて焼いた料理が有名です。", "細くてツルツルした日本三大うどんの一つがあります。", "「泣く子はいねがー」と叫ぶ行事があります。", "魚を発酵させた「しょっつる」を使った鍋があります。", "「いぶりがっこ」という燻製（くんせい）の漬物が名物です。", "おばあちゃんが売る「ババヘラアイス」があります。"],
+            advanced: ["日本で一番深い湖「田沢湖」があります。", "曲げわっぱという木のお弁当箱が有名です。", "「〇〇美人」という言葉で知られる県です。", "じゅんさいの生産量が日本一です。", "目玉焼きが乗った横手やきそばが有名です。", "提灯をたくさん吊るした竿燈（かんとう）まつりがあります。"]
+          }
+        },
+        { id: 6, name: "山形県", region: "東北", lat: 38.24056, lng: 140.36333, rivals: [19, 2, 5],
+          hints: {
+            beginner: ["河原で里芋とお肉の鍋を食べる行事が盛んです。", "スープが冷たいラーメンが名物です。", "赤い宝石と呼ばれるサクランボの生産量が日本一です。", "丸いこんにゃくを醤油で煮たものが名物です。", "高級な「米沢牛」が有名です。", "冬には雪が木に積もってできる「樹氷」が見られます。"],
+            advanced: ["将棋の駒（こま）の生産量が日本一です（天童市）。", "「だだちゃ豆」という枝豆が特産です。", "最上川（もがみがわ）という三大急流の一つが流れています。", "ラ・フランス（西洋梨）の生産量が日本一です。", "世界一のクラゲ水族館があります。", "すべての市町村に温泉があります。"]
+          }
+        },
+        { id: 7, name: "福島県", region: "東北", lat: 37.75, lng: 140.46778, rivals: [19, 33, 4],
+          hints: {
+            beginner: ["朝から食べる習慣もある醤油味のラーメンが有名です。", "首がゆらゆら動く赤い牛の人形が有名です。", "桃（もも）の生産がとても盛んです。", "「ままどおる」というミルク味のお菓子が有名です。", "ネギ一本を箸の代わりにして食べるそばがあります。", "白鳥が飛来する猪苗代湖があります。"],
+            advanced: ["千円札の肖像画になった医学者の出身地です。", "白虎隊（びゃっこたい）の悲劇の歴史がある会津若松があります。", "映画「フラガール」の舞台になったリゾート施設があります。", "日本三大桜の一つ「三春滝桜」があります。", "起き上がり小法師（こぼし）という倒れない人形があります。", "相馬野馬追（そうまのまおい）というお祭りがあります。"]
+          }
+        },
+        { id: 8, name: "茨城県", region: "関東", lat: 36.34139, lng: 140.44667, rivals: [43, 9, 22],
+          hints: {
+            beginner: ["ご飯にかけて食べるネバネバした豆がとても有名です。", "サツマイモを干したおやつの生産量が日本一です。", "網目のある高級なメロンの生産量が日本一です。", "冬にはアンコウ鍋が名物です。", "丘一面に広がる青いネモフィラの花が有名です。", "冬に凍ることもある袋田の滝があります。"],
+            advanced: ["日本で２番目に大きい湖があります。", "多くの研究機関が集まる学園都市があります。", "梅の名所である日本三名園の一つがあります。", "レンコンの生産量が日本一です。", "世界一高い青銅製の大仏があります。", "ピーマンの生産量が日本一です。"]
+          }
+        },
+        { id: 9, name: "栃木県", region: "関東", lat: 36.56583, lng: 139.88361, rivals: [40, 42, 8],
+          hints: {
+            beginner: ["ある都市では、パリパリの皮で包んだ料理の消費量が多いです。", "赤い果物「とちおとめ」の生産が日本一です。", "「見ざる言わざる聞かざる」の彫刻がある神社が有名です。", "青竹で麺を打つラーメンが有名です。", "「レモン牛乳」という黄色いパッケージの飲み物があります。", "エレベーターで降りて見る華厳（けごん）の滝があります。"],
+            advanced: ["かんぴょう（海苔巻きの具など）の生産が日本一です。", "鬼怒川（きぬがわ）温泉という有名な温泉地があります。", "足尾銅山（あしおどうざん）という歴史的な鉱山がありました。", "大谷石（おおやいし）という石の産地です。", "益子焼（ましこやき）という焼き物が有名です。", "海に面していない「海なし県」の一つです。"]
+          }
+        },
+        { id: 10, name: "群馬県", region: "関東", lat: 36.39111, lng: 139.06083, rivals: [9, 11, 44],
+          hints: {
+            beginner: ["幅がとても広い「ひもかわうどん」があります。", "こんにゃくの生産量が日本一です。", "草津（くさつ）温泉など、たくさんの温泉があります。", "タレを塗って焼いた「焼きまんじゅう」があります。", "太くて甘い下仁田（しもにた）ネギが有名です。", "石段が有名な「伊香保（いかほ）温泉」があります。"],
+            advanced: ["世界遺産の「富岡製糸場」があります。", "縁起物であるダルマの生産が日本一です。", "冬に「からっ風」とよばれる強い風がふきます。", "キャベツの生産量がとても多い村があります。", "「上毛（じょうもう）かるた」で郷土愛を育みます。", "日本三大うどんの一つ、水沢うどんがあります。"]
+          }
+        },
+        { id: 11, name: "埼玉県", region: "関東", lat: 35.85694, lng: 139.64889, rivals: [12, 13, 14],
+          hints: {
+            beginner: ["硬くて醤油味の「おせんべい」が有名です。", "深谷（ふかや）ネギというブランド野菜があります。", "東京のすぐ北にあり、ベッドタウンとして人が多いです。", "わらじのような大きさのカツ丼が名物です。", "鉄道博物館があります。", "「小江戸」と呼ばれる古い町並みの観光地があります。"],
+            advanced: ["ひな人形の生産量が日本一です。", "ネギの生産量が日本有数です。", "「快晴の日数」が日本一になることが多い県です。", "長瀞（ながとろ）のライン下りが楽しめます。", "鯉のぼりの生産量が日本一です。", "「十万石まんじゅう」という銘菓があります。"]
+          }
+        },
+        { id: 12, name: "千葉県", region: "関東", lat: 35.60472, lng: 140.12333, rivals: [31, 8, 14],
+          hints: {
+            beginner: ["殻付きのピーナッツ（落花生）の生産が日本一です。", "有名なネズミのキャラクターがいるテーマパークがあります。", "みずみずしい梨（ナシ）の生産量が日本一です。", "アサリなどの潮干狩りが楽しめます。", "日本の空の玄関口である国際空港があります。", "アジなどを叩いて味噌と混ぜた「なめろう」が有名です。"],
+            advanced: ["醤油（しょうゆ）の生産量が日本一です。", "伊勢海老（いせえび）の漁獲量がとても多いです。", "日本で一番高い山がない県です（一番高い場所でも低い）。", "カブの生産量が日本一です。", "九十九里浜（くじゅうくりはま）という長い砂浜があります。", "東京湾に突き出た半島があります。"]
+          }
+        },
+        { id: 13, name: "東京都", region: "関東", lat: 35.68944, lng: 139.69167, rivals: [27, 23, 14],
+          hints: {
+            beginner: ["小麦粉を水で溶いて焼く「もんじゃ焼き」が名物です。", "634メートルの高い塔があります。", "日本の首都であり、一番人口が多いです。", "大きな提灯がある浅草の雷門が有名です。", "パンダがいる上野動物園があります。", "世界的に有名なスクランブル交差点があります。"],
+            advanced: ["船で24時間かかる世界自然遺産の島があります。", "大学の数が日本一多いです。", "日本で一番面積が小さい「市」があります。", "コマツナの名前の由来になった場所です。", "切子（きりこ）というガラス細工が有名です。", "埋め立て地に作られた大きな空港があります。"]
+          }
+        },
+        { id: 14, name: "神奈川県", region: "関東", lat: 35.44778, lng: 139.6425, rivals: [28, 27, 13],
+          hints: {
+            beginner: ["シューマイ（シウマイ）が名物の駅弁があります。", "日本最大級の中華街があります。", "東京の次に人口が多く、大きな港町があります。", "お土産として有名なサブレがあります。", "海沿いを走る電車（江ノ電）が人気です。", "赤レンガ倉庫という観光スポットがあります。"],
+            advanced: ["お正月の大学駅伝のコースになっています。", "中に入ることができる大仏があります。", "政令指定都市が３つもあります。", "寄木細工（よせぎざいく）という伝統工芸があります。", "板に乗ったかまぼこが有名です。", "「海軍カレー」が名物の街があります。"]
+          }
+        },
+        { id: 15, name: "新潟県", region: "中部", lat: 37.90222, lng: 139.02361, rivals: [1, 5, 6],
+          hints: {
+            beginner: ["日本で一番食べられているお米の品種が生まれた県です。", "お米から作るお酒（日本酒）が有名です。", "たらい舟が有名な「佐渡島」があります。", "海藻をつなぎに使ったお蕎麦があります。", "笹の葉で包んだお団子が名物です。", "日本海に面して縦に長いです。"],
+            advanced: ["おせんべいの生産額が日本一です。", "金属加工が有名で、スプーンやフォークを作っています。", "錦鯉（にしきごい）の発祥の地と言われています。", "チューリップの切り花生産量が日本一です。", "日本一長い川「信濃川」が流れています。", "かつて金山でたくさんの金が掘られていました。"]
+          }
+        },
+        { id: 16, name: "富山県", region: "中部", lat: 36.69528, lng: 137.21139, rivals: [17, 18, 29],
+          hints: {
+            beginner: ["真っ黒なスープの「ブラックラーメン」が有名です。", "「ホタルイカ」という青く光るイカがとれます。", "天然のいけすと呼ばれる深い湾があります。", "笹の葉で包んだ押し寿司が有名です。", "「富山湾の宝石」と呼ばれる白エビが名産です。", "冬の味覚、寒ブリが有名です。"],
+            advanced: ["昔から「置き薬」の商売が有名です。", "日本一高いアーチ式ダムがあります。", "チューリップの球根の出荷量が日本一です。", "アルミサッシの生産が盛んです。", "五箇山（ごかやま）という合掌造りの集落があります。", "海の上に景色が逆さに映る「蜃気楼」が見えます。"]
+          }
+        },
+        { id: 17, name: "石川県", region: "中部", lat: 36.59444, lng: 136.62556, rivals: [16, 18, 26],
+          hints: {
+            beginner: ["冬には美味しいカニやお寿司が食べられます。", "金箔（きんぱく）を乗せた豪華なソフトクリームがあります。", "日本海に突き出た「能登（のと）半島」があります。", "濃厚なルーとカツが特徴のカレーがあります。", "「ハントンライス」という洋食があります。", "美しい和菓子作りが盛んです。"],
+            advanced: ["金箔（きんぱく）の生産量が日本一（ほぼ100%）です。", "日本三名園の一つである美しい庭園があります。", "高級な漆器の産地です。", "友禅（ゆうぜん）という着物の染め物が有名です。", "色鮮やかな絵付けの焼き物があります。", "車で波打ち際を走れる砂浜があります。"]
+          }
+        },
+        { id: 18, name: "福井県", region: "中部", lat: 36.0658, lng: 136.22194, rivals: [17, 16, 31],
+          hints: {
+            beginner: ["冬には黄色いタグがついた高級なカニが有名です。", "辛味大根の汁で食べるお蕎麦が名物です。", "恐竜の化石がたくさん見つかることで有名です。", "「ソースカツ丼」が名物です。", "冬にコタツに入って水ようかんを食べます。", "「羽二重餅」という柔らかいお餅があります。"],
+            advanced: ["メガネフレームの生産が日本一です（鯖江市）。", "東尋坊（とうじんぼう）という断崖絶壁があります。", "かつて「若狭（わかさ）」や「越前（えちぜん）」と呼ばれていました。", "永平寺（えいへいじ）という大きなお寺があります。", "油揚げの消費量が日本一です。", "社長の輩出率がとても高い県です。"]
+          }
+        },
+        { id: 19, name: "山梨県", region: "中部", lat: 35.66389, lng: 138.56833, rivals: [22, 20, 33],
+          hints: {
+            beginner: ["カボチャや野菜を入れた「ほうとう」が有名です。", "紫色の果物や、桃の生産量が日本一です。", "日本一高い山があり、海には面していません。", "きな粉と黒蜜をかけたお餅のお菓子が有名です。", "非常に硬い麺のうどんがあります。", "絶叫マシンで有名な遊園地があります。"],
+            advanced: ["日本ワインの発祥地で、生産量が日本一です。", "戦国武将の武田信玄の地元です。", "ミネラルウォーターの生産量が日本一です。", "宝石の加工が盛んです。", "富士山の麓に５つの湖があります。", "リニアモーターカーの実験線があります。"]
+          }
+        },
+        { id: 20, name: "長野県", region: "中部", lat: 36.65139, lng: 138.18111, rivals: [1, 10, 21],
+          hints: {
+            beginner: ["冷たい水で育ったお蕎麦がとても有名です。", "野菜を小麦粉の皮で包んで焼いた郷土料理があります。", "「日本の屋根」と呼ばれる高い山々があります。", "野沢菜（のざわな）漬けが有名です。", "避暑地として有名な高原リゾートがあります。", "「牛に引かれて」行くといわれる有名なお寺があります。"],
+            advanced: ["レタスやセロリの生産量が日本一です。", "日本で一番多くの県と隣り合っています（8県）。", "日本一長い川の上流部分が流れています。", "国宝の黒いお城があります。", "「御神渡り」現象で有名な湖があります。", "精密機械の工場が多く、「東洋のスイス」と呼ばれました。"]
+          }
+        },
+        { id: 21, name: "岐阜県", region: "中部", lat: 35.39111, lng: 136.72222, rivals: [20, 23, 25],
+          hints: {
+            beginner: ["高級なブランド牛（〇〇牛）の産地です。", "栗を使った和菓子「栗きんとん」が有名です。", "世界遺産の合掌造り集落があります。", "鶏肉を味噌で炒めた料理があります。", "日本三名泉の一つと言われる温泉があります。", "わらじのような形をしたお餅のおやつがあります。"],
+            advanced: ["包丁やハサミなどの刃物の生産で有名です。", "川で鳥を使って魚をとる伝統漁法が行われます。", "「さるぼぼ」という赤い人形のお守りがあります。", "陶磁器の生産量が日本一です。", "食品サンプルの生産が盛んです。", "天下分け目の戦いが行われた場所があります。"]
+          }
+        },
+        { id: 22, name: "静岡県", region: "中部", lat: 34.97694, lng: 138.38306, rivals: [46, 19, 30],
+          hints: {
+            beginner: ["浜名湖でのウナギの養殖が有名です。", "緑茶の生産がとても盛んです。", "日本一高い山があり、海に面しています。", "B級グルメの焼きそばが有名です。", "黒いスープのおでんがあります。", "サッカーが盛んな県です。"],
+            advanced: ["ピアノの生産量が日本一です。", "お寿司に欠かせないワサビの生産量が日本一です。", "プラモデルの出荷額が日本一です。", "マグロの水揚げ量が日本一の港があります。", "お茶の生産量は日本一を争っています。", "温泉地が多い大きな半島があります。"]
+          }
+        },
+        { id: 23, name: "愛知県", region: "中部", lat: 35.18028, lng: 136.90667, rivals: [22, 10, 24],
+          hints: {
+            beginner: ["とんかつに味噌ダレをかけた料理が有名です。", "トーストにあんこをのせる朝食文化があります。", "自動車の生産がとても盛んです。", "平たい麺の「きしめん」が有名です。", "ウナギを刻んでご飯に乗せた料理があります。", "喫茶店のモーニングサービスが豪華です。"],
+            advanced: ["キャベツやブロッコリーの生産量が日本一です。", "お城の屋根に「金のシャチホコ」がいます。", "戦国時代の有名な３人の武将の出身地です。", "陶磁器の生産が盛んです（瀬戸物）。", "米粉と砂糖で作る蒸し菓子が名物です。", "工業製品の出荷額がずっと日本一です。"]
+          }
+        },
+        { id: 24, name: "三重県", region: "近畿", lat: 34.73028, lng: 136.50861, rivals: [30, 29, 25],
+          hints: {
+            beginner: ["世界的に有名な高級ブランド牛の産地です。", "太くて柔らかいタレのかかったうどんがあります。", "2000年の歴史がある神宮があります。", "お餅にあんこを乗せた「赤福」が有名です。", "分厚い豚肉を焼いた「トンテキ」があります。", "水族館にジュゴンがいます。"],
+            advanced: ["真珠（しんじゅ）の養殖が盛んです。", "世界的なカーレースが行われるサーキットがあります。", "海女（あま）さんの数が日本一です。", "有名な忍者の里があります。", "ろうそくの生産量が日本一です。", "鍵や車の製造も盛んです。"]
+          }
+        },
+        { id: 25, name: "滋賀県", region: "近畿", lat: 35.00444, lng: 135.86833, rivals: [26, 21, 24],
+          hints: {
+            beginner: ["日本三大和牛の一つであるブランド牛の産地です。", "フナを発酵させた独特な香りのお寿司があります。", "日本で一番大きな湖があります。", "漬物が入ったパンがご当地グルメです。", "国宝の彦根城があります。", "飛び出し坊やの看板がたくさんあります。"],
+            advanced: ["タヌキの置物で有名な焼き物の産地です。", "兜をかぶった白い猫のキャラがいます。", "県の面積の約６分の１が湖です。", "比叡山延暦寺という世界遺産のお寺があります。", "競技カルタの聖地があります。", "近江商人（おうみしょうにん）の発祥地です。"]
+          }
+        },
+        { id: 26, name: "京都府", region: "近畿", lat: 35.02139, lng: 135.75556, rivals: [29, 25, 27],
+          hints: {
+            beginner: ["三角形の皮であんこを包んだお菓子が定番です。", "お豆腐や湯葉（ゆば）を使った料理が有名です。", "金閣寺や清水寺など、たくさんのお寺があります。", "抹茶（まっちゃ）を使ったスイーツがたくさんあります。", "すぐきや千枚漬けなどのお漬物が美味しいです。", "着物を着た舞妓（まいこ）さんがいます。"],
+            advanced: ["豪華な織物の産地として有名です。", "海から遠いイメージですが、日本海に面しています。", "海にかかる橋のように見える砂州（日本三景）があります。", "ブランド野菜の生産が盛んです。", "世界的なゲーム会社の本社があります。", "かつて日本の首都でした。"]
+          }
+        },
+        { id: 27, name: "大阪府", region: "近畿", lat: 34.68639, lng: 135.52, rivals: [13, 28, 26],
+          hints: {
+            beginner: ["丸い形をした粉もん料理が有名です。", "ソースを二度付けしてはいけない揚げ物があります。", "映画のテーマパークやお笑いの劇場があります。", "ある店で「豚まん」を買うと５５１と書いてあります。", "カニやグリコの看板が有名な繁華街があります。", "通天閣というタワーがあります。"],
+            advanced: ["日本で３番目に人口が多いですが、面積は２番目に小さいです。", "世界遺産に登録された巨大な古墳群があります。", "江戸時代は「天下の台所」と呼ばれていました。", "つまようじの生産量が日本一です。", "豊臣秀吉が建てたお城があります。", "お盆に踊る「河内音頭」があります。"]
+          }
+        },
+        { id: 28, name: "兵庫県", region: "近畿", lat: 34.69139, lng: 135.18306, rivals: [27, 26, 14],
+          hints: {
+            beginner: ["世界的に有名なブランド牛の産地です。", "タコが入った、出汁で食べる卵焼きが名物です。", "「白鷺城」とも呼ばれる白いお城があります。", "中華街があり、豚まんなどが売られています。", "女性だけの歌劇団があります。", "お正月料理に使う黒豆が有名です。"],
+            advanced: ["北は日本海、南は瀬戸内海に面しています。", "日本の時間を決める子午線が通っています。", "高校野球の聖地である球場があります。", "手延べそうめんの生産が盛んです。", "日本酒の生産量が日本一です。", "カバンの生産量が日本一です。"]
+          }
+        },
+        { id: 29, name: "奈良県", region: "近畿", lat: 34.68528, lng: 135.83278, rivals: [26, 30, 24],
+          hints: {
+            beginner: ["葉っぱでおにぎりのように包んだお寿司が有名です。", "世界最大級の木造の大仏があります。", "公園にたくさんの野生のシカがいます。", "お素麺の発祥地と言われています。", "山全体が桜で埋め尽くされる場所があります。", "角が生えた「せんとくん」というキャラがいます。"],
+            advanced: ["世界最古の木造建築であるお寺があります。", "靴下（くつした）の生産量が日本一です。", "書道に使う墨（すみ）の生産が盛んです。", "金魚の養殖が盛んです。", "お茶を点てる道具（茶せん）の生産が日本一です。", "かつて「平城京」という都がありました。"]
+          }
+        },
+        { id: 30, name: "和歌山県", region: "近畿", lat: 34.22611, lng: 135.1675, rivals: [38, 22, 29],
+          hints: {
+            beginner: ["冬にコタツで食べる果物の生産が日本一です。", "豚骨醤油味のラーメンが有名です。", "パンダがたくさんいる動物園があります。", "高菜の葉で包んだ大きなおにぎりがあります。", "日本一の落差を誇る滝があります。", "クジラを食べる文化があります。"],
+            advanced: ["おにぎりの具になる酸っぱい実の生産が日本一です。", "醤油（しょうゆ）の発祥地の一つと言われています。", "世界遺産の古い参詣道があります。", "山の上に仏教の聖地があります。", "柿の生産量が日本一です。", "本州の一番南の端があります。"]
+          }
+        },
+        { id: 31, name: "鳥取県", region: "中国", lat: 35.50361, lng: 134.23833, rivals: [32, 12, 33],
+          hints: {
+            beginner: ["みずみずしい「二十世紀梨」が有名です。", "冬にはカニがたくさんとれます。", "ラクダがいるような大きな砂場があります。", "牛の骨で出汁をとったラーメンがあります。", "「すなば珈琲」というカフェがあります。", "ピンク色のカレーがあります。"],
+            advanced: ["日本で一番人口が少ない県です。", "有名な妖怪漫画の作者の出身地です。", "砂地を利用して、ラッキョウの栽培が盛んです。", "「伯耆富士」と呼ばれる高い山があります。", "神話「因幡（いなば）の白兎」の舞台です。", "砂丘の傾斜を利用したパラグライダーが楽しめます。"]
+          }
+        },
+        { id: 32, name: "島根県", region: "中国", lat: 35.47222, lng: 133.05056, rivals: [31, 35, 24],
+          hints: {
+            beginner: ["殻ごと挽いた黒っぽいお蕎麦が有名です。", "小さな貝（シジミ）がたくさんとれる湖があります。", "大きな注連縄（しめなわ）がある神社が有名です。", "小豆を甘く煮た「ぜんざい」発祥の地です。", "猫のキャラクター「しまねっこ」がいます。", "高級魚「ノドグロ」が美味しいです。"],
+            advanced: ["世界遺産に登録された銀山があります。", "旧暦の10月に神様が集まる場所です。", "東西にとても細長い形をしています。", "そろばんの生産が盛んです。", "海に浮かぶ隠岐（おき）諸島があります。", "日本一高い石積みの灯台があります。"]
+          }
+        },
+        { id: 33, name: "岡山県", region: "中国", lat: 34.66167, lng: 133.935, rivals: [19, 7, 34],
+          hints: {
+            beginner: ["高級な緑色のブドウや、白い桃が有名です。", "昔話に出てくる「きびだんご」がお土産です。", "川に流れてきた桃から生まれた英雄の伝説があります。", "デミグラスソースをかけたカツ丼があります。", "ホルモンを入れた焼きうどんが有名です。", "魚の酢漬けを使ったお寿司があります。"],
+            advanced: ["国産ジーンズの発祥地として有名です。", "四国へ渡る長い橋がかかっています。", "「晴れの国」というキャッチフレーズがあります。", "学生服の生産量が日本一です。", "日本三名園の一つである庭園があります。", "白壁の蔵が並ぶ美しい町並みがあります。"]
+          }
+        },
+        { id: 34, name: "広島県", region: "中国", lat: 34.39639, lng: 132.45944, rivals: [4, 33, 35],
+          hints: {
+            beginner: ["キャベツを重ねて焼く「お好み焼き」が有名です。", "海のミルクと呼ばれる貝の生産が日本一です。", "海の中に鳥居が立っている神社があります。", "モミジの形をしたお饅頭が有名です。", "尾道（おのみち）という坂の街のラーメンが人気です。", "真っ赤なユニフォームの野球チームがあります。"],
+            advanced: ["レモンの生産量が日本一です。", "化粧筆や習字の筆の生産が日本一です。", "戦争の悲惨さを伝えるドーム型の建物があります。", "かつて軍港として栄えた街があります。", "けん玉発祥の地と言われています。", "自動車メーカーの本社があります。"]
+          }
+        },
+        { id: 35, name: "山口県", region: "中国", lat: 34.18583, lng: 131.47139, rivals: [40, 32, 34],
+          hints: {
+            beginner: ["毒があるけど美味しい高級魚が有名です。", "熱した瓦（かわら）の上で茶そばを焼く料理があります。", "本州の一番西の端にあります。", "ガードレールが黄色やオレンジ色をしています。", "四角い形のお寿司（押し寿司）があります。", "鍋にみかんを丸ごと入れる料理があります。"],
+            advanced: ["日本最大級のカルスト台地（白い岩）があります。", "木造の美しいアーチ橋があります。", "総理大臣を一番多く輩出している県です。", "幕末の志士を育てた私塾があります。", "セメントの原料になる石灰石がとれます。", "海底トンネルや橋で九州とつながっています。"]
+          }
+        },
+        { id: 36, name: "徳島県", region: "四国", lat: 34.06583, lng: 134.55944, rivals: [39, 38, 28],
+          hints: {
+            beginner: ["甘辛いお肉が乗った、濃い味のラーメンが有名です。", "スダチの生産が日本一です。", "お盆に踊る「阿波おどり」が有名です。", "「祖谷（いや）のかずら橋」があります。", "「フィッシュカツ」というカツが食べられます。", "「金ちゃんヌードル」の会社があります。"],
+            advanced: ["鳴門（なると）海峡の大きな「渦潮（うずしお）」が見られます。", "サツマイモの「鳴門金時（なるときんとき）」が有名です。", "「地鶏（阿波尾鶏）」の出荷数が日本一です。", "青色LEDの生産が盛んです。", "お遍路さん（88ヶ所巡り）のスタート地点があります。", "「四国三郎」と呼ばれる大きな川が流れています。"]
+          }
+        },
+        { id: 37, name: "香川県", region: "四国", lat: 34.34028, lng: 134.04333, rivals: [33, 11, 27],
+          hints: {
+            beginner: ["とにかく「うどん」が有名で、「うどん県」とも呼ばれます。", "骨付鳥（ほねつきどり）という鶏肉料理が名物です。", "日本で一番面積が小さい県です。", "お正月にあんこ入りの餅をお雑煮に入れます。", "長い石段がある神社（こんぴらさん）があります。", "カラフルで丸いお菓子がソフトクリームに乗っています。"],
+            advanced: ["オリーブの生産が日本一です（小豆島）。", "うちわの生産量が日本一です（丸亀市）。", "ため池の密度がとても高いです。", "手袋の生産量が日本一です。", "本州と四国を結ぶ大きな橋がかかっています。", "「二十四の瞳」という映画の舞台になりました。"]
+          }
+        },
+        { id: 38, name: "愛媛県", region: "四国", lat: 33.84167, lng: 132.76611, rivals: [30, 22, 37],
+          hints: {
+            beginner: ["オレンジ色の果物の生産がとても盛んです。", "鯛（タイ）を丸ごと炊き込んだご飯が有名です。", "日本最古と言われる温泉があります。", "小魚を骨ごとすりつぶした練り物が名物です。", "焼豚と目玉焼きが乗った丼ご飯があります。", "夏目漱石の小説「坊っちゃん」の舞台です。"],
+            advanced: ["タオルの生産量が日本一です（今治タオル）。", "養殖のマダイの生産量が日本一です。", "蛇口からジュースが出る都市伝説があります。", "キウイフルーツの生産量が日本一です。", "自転車で渡れる橋で広島県とつながっています。", "現存天守の一つであるお城があります。"]
+          }
+        },
+        { id: 39, name: "高知県", region: "四国", lat: 33.55972, lng: 133.53111, rivals: [36, 45, 22],
+          hints: {
+            beginner: ["「カツオのたたき」がとても有名です。", "お酒をたくさん飲む文化があります。", "坂本龍馬（さかもとりょうま）の出身地です。", "「皿鉢（さわち）料理」という大皿料理があります。", "「帽子パン」というパンがあります。", "「よさこい祭り」が有名です。"],
+            advanced: ["四国の中で一番面積が広いです。", "日本最後の清流と呼ばれる川が流れています。", "ナスやニラの生産が盛んです。", "ユズの生産量が日本一です。", "ショウガの生産量が日本一です。", "日本三大鍾乳洞の一つがあります。"]
+          }
+        },
+        { id: 40, name: "福岡県", region: "九州・沖縄", lat: 33.60639, lng: 130.41806, rivals: [4, 13, 14],
+          hints: {
+            beginner: ["白濁したスープの「豚骨ラーメン」が有名です。", "辛子明太子（からしめんたいこ）が名物です。", "九州で一番人口が多い大都市です。", "「もつ鍋」や「水炊き」が美味しいです。", "「博多通りもん」というお菓子があります。", "ひよこの形をしたお饅頭が有名です。"],
+            advanced: ["イチゴの「あまおう」の産地です。", "学問の神様「太宰府天満宮（だざいふてんまんぐう）」があります。", "屋台（やたい）の数が日本一多いです。", "金印（きんいん）が見つかった志賀島（しかのしま）があります。", "タケノコの生産量が多いです。", "県内に政令指定都市が２つもあります。"]
+          }
+        },
+        { id: 41, name: "佐賀県", region: "九州・沖縄", lat: 33.24944, lng: 130.29889, rivals: [40, 42, 8],
+          hints: {
+            beginner: ["透明な「イカの活き造り」が名物です。", "高級なブランド牛が有名です。", "有田焼（ありたやき）などの焼き物が有名です。", "「シシリアンライス」というご当地グルメがあります。", "「ブラックモンブラン」というアイスが人気です。", "「ムツゴロウ」という魚がいます。"],
+            advanced: ["海苔（のり）の生産枚数が長年日本一でした。", "吉野ヶ里（よしのがり）遺跡という弥生時代の遺跡があります。", "バルーンフェスタ（熱気球の大会）が有名です。", "ハウスミカンの生産量が日本一です。", "タマネギの生産が盛んです。", "伊万里（いまり）や唐津（からつ）という地名が有名です。"]
+          }
+        },
+        { id: 42, name: "長崎県", region: "九州・沖縄", lat: 32.74472, lng: 129.87361, rivals: [40, 43, 9],
+          hints: {
+            beginner: ["野菜やお肉がたっぷり入った麺料理が有名です。", "黄色くて甘い、南蛮渡来のお菓子が名物です。", "オランダの街並みを再現したテーマパークがあります。", "大きなハンバーガーが有名です。", "ピラフとパスタとカツが一皿に乗った料理があります。", "「1000万ドルの夜景」と言われます。"],
+            advanced: ["島の数が日本一多い県です。", "かつて海外との貿易の窓口だった人工の島がありました。", "オレンジ色の果物「ビワ」の生産量が日本一です。", "ジャガイモの生産量が北海道に次いで２位です。", "廃墟となった島（軍艦島）があります。", "リアス海岸がとても複雑です。"]
+          }
+        },
+        { id: 43, name: "熊本県", region: "九州・沖縄", lat: 32.78972, lng: 130.74167, rivals: [8, 40, 46],
+          hints: {
+            beginner: ["「馬刺し（ばさし）」というお肉料理が有名です。", "黒いクマのゆるキャラが世界的に有名です。", "世界最大級のカルデラを持つ火山があります。", "穴に辛子味噌を詰めたレンコンが名物です。", "春雨を使った麺料理があります。", "サツマイモとあんこのお菓子があります。"],
+            advanced: ["トマトの生産量が日本一です。", "スイカの生産量が日本一です。", "加藤清正が建てた、黒くて有名なお城があります。", "イグサ（畳の原料）の生産量が日本一です。", "デコポン（柑橘類）が有名です。", "天草（あまくさ）諸島があります。"]
+          }
+        },
+        { id: 44, name: "大分県", region: "九州・沖縄", lat: 33.23806, lng: 131.6125, rivals: [38, 10, 22],
+          hints: {
+            beginner: ["鶏肉を天ぷらにした料理が大好きです。", "「おんせん県」と呼ばれるほど温泉が多いです。", "湯煙が立ち上る温泉街が有名です。", "高級なサバやアジがとれます。", "赤い色の温泉などがある「地獄めぐり」があります。", "きな粉をまぶした平たい麺のおやつがあります。"],
+            advanced: ["源泉（温泉が湧き出る場所）の数が日本一です。", "酸味のある柑橘類（カボス）の生産量が日本一です。", "干し椎茸（しいたけ）の生産量が日本一です。", "岩に掘られた仏像（磨崖仏）が有名です。", "香辛料のサフランの生産量が日本一です。", "野生のサルがいる山があります。"]
+          }
+        },
+        { id: 45, name: "宮崎県", region: "九州・沖縄", lat: 31.91111, lng: 131.42389, rivals: [39, 46, 30],
+          hints: {
+            beginner: ["完熟マンゴーなどの南国フルーツが有名です。", "炭火で焼いた「地鶏」が名物です。", "南国の雰囲気があるフェニックスの木が植えられています。", "「肉巻きおにぎり」の発祥地です。", "「冷や汁（ひやじる）」という郷土料理があります。", "モアイ像のレプリカがあるサンメッセ日南があります。"],
+            advanced: ["キュウリやピーマンの生産が盛んです。", "「チキン南蛮（なんばん）」の発祥地です。", "神話の舞台になった峡谷があります。", "ブロイラー（鶏肉）の飼育数が日本一です。", "プロ野球のキャンプ地として有名です。", "黄色い皮の柑橘類（日向夏）があります。"]
+          }
+        },
+        { id: 46, name: "鹿児島県", region: "九州・沖縄", lat: 31.56028, lng: 130.55806, rivals: [22, 43, 47],
+          hints: {
+            beginner: ["「黒豚（くろぶた）」を使った料理が有名です。", "白く削った氷にフルーツなどを乗せた「白熊（しろくま）」が名物です。", "今も噴火している「桜島（さくらじま）」があります。", "さつま揚げが有名です。", "「かるかん」というお菓子があります。", "砂蒸し温泉（指宿）があります。"],
+            advanced: ["サツマイモの生産量が日本一です。", "ロケットの打ち上げ基地（種子島・内之浦）があります。", "お茶の生産量が静岡県に次いで２位です。", "黒酢（くろず）の生産が盛んです。", "世界自然遺産の島に巨大な杉の木があります。", "ウナギの養殖生産量が日本一です。"]
+          }
+        },
+        { id: 47, name: "沖縄県", region: "九州・沖縄", lat: 26.2125, lng: 127.68111, rivals: [1, 46, 40],
+          hints: {
+            beginner: ["「ゴーヤチャンプルー」や「ソーキそば」が有名です。", "「ちんすこう」や「サーターアンダギー」というお菓子があります。", "海がとても綺麗で、冬でも暖かいです。", "「海ぶどう」や「タコライス」を食べます。", "シーサーが家の守り神です。", "美ら海（ちゅらうみ）水族館があります。"],
+            advanced: ["パイナップルの生産量が日本一です。", "モズクの生産量が日本一です。", "サトウキビの栽培が盛んです。", "かつては「琉球（りゅうきゅう）王国」という国でした。", "マンゴーの生産量が宮崎県より多いです。", "日本で唯一、鉄道（JR）が通っていない県です（モノレールはあります）。"]
+          }
+        }
+    ];
+
+    // Game State
+    var state = {
+        completedByMode: {
+            beginner: [],
+            advanced: []
+        },
+        // 現在のモードのクリア済みリストを取得するヘルパー
+        get currentCompleted() {
+            return this.completedByMode[this.mode];
+        },
+        currentPrefecture: null,
+        currentHints: [],
+        hintStage: 0,
+        isFirstQuestion: true,
+        mode: 'beginner', // 'beginner' or 'advanced'
+        markers: [] // 管理中のマーカー
+    };
+
+    // Leaflet map instance
+    var myMap = null;
+    var myMarker = null; // 現在の問題の正解マーカー
+    
+    // Confetti stuff
+    var confettiCanvas = document.getElementById('confetti-canvas');
+    var confettiCtx = confettiCanvas.getContext('2d');
+    var confettiParticles = [];
+    var confettiAnimationId = null;
+
+    // DOM Elements
+    var dom = {
+        remaining: document.getElementById('remaining-count'),
+        hintContainer: document.getElementById('hint-container'),
+        hint1: document.getElementById('hint1'),
+        hint2: document.getElementById('hint2'),
+        hint3: document.getElementById('hint3'),
+        text1: document.getElementById('text1'),
+        text2: document.getElementById('text2'),
+        text3: document.getElementById('text3'),
+        btnNextHint: document.getElementById('btn-show-hint'),
+        btnNextPanel: document.getElementById('btn-next-panel'),
+        choices: document.getElementById('choices-container'),
+        feedbackOverlay: document.getElementById('feedback-overlay'),
+        feedbackTitle: document.getElementById('feedback-title'),
+        feedbackDesc: document.getElementById('feedback-desc'),
+        btnModalAction: document.getElementById('btn-modal-action'),
+        mapOverlay: document.getElementById('map-overlay'),
+        btnGmapLink: document.getElementById('btn-gmap-link'),
+        startOverlay: document.getElementById('start-overlay'),
+        confirmOverlay: document.getElementById('confirm-overlay')
+    };
+
+    // Resize canvas
+    window.addEventListener('resize', () => {
+        if(confettiCanvas) {
+            confettiCanvas.width = window.innerWidth;
+            confettiCanvas.height = window.innerHeight;
+        }
+    });
+    if(confettiCanvas) {
+        confettiCanvas.width = window.innerWidth;
+        confettiCanvas.height = window.innerHeight;
+    }
+
+
+    function startGame(mode) {
+        state.mode = mode;
+        dom.startOverlay.style.display = 'none';
+        initAudio();
+        
+        // --- 追加: モード表示の更新 ---
+        const quizPanel = document.querySelector('.quiz-panel');
+        const courseBadge = document.getElementById('course-badge');
+        
+        if (mode === 'advanced') {
+            quizPanel.classList.add('advanced-mode');
+            courseBadge.innerText = "上級コース";
+        } else {
+            quizPanel.classList.remove('advanced-mode');
+            courseBadge.innerText = "初級コース";
+        }
+        // ---------------------------
+        
+        // Leafletマップの初期化（初回のみ）
+        initLeafletMap();
+
+        // 過去のマーカーをクリアし、現在のモードのマーカーを再描画
+        refreshMapMarkers();
+
+        // UI更新（残り数など）
+        updateRemainingCount();
+
+        // もし現在のモードで問題が進行中でなければ（あるいは初回なら）、次の問題へ
+        nextQuestion();
+    }
+    
+    function backToTitle() {
+        dom.startOverlay.style.display = 'flex';
+    }
+
+    function initGame() {
+        initLeafletMap();
+        if(!state.currentPrefecture) {
+            nextQuestion();
+        }
+    }
+    
+    // 確認ダイアログを表示
+    function confirmReset() {
+        dom.confirmOverlay.style.display = 'flex';
+    }
+
+    // 確認ダイアログを閉じる
+    function hideConfirmReset() {
+        dom.confirmOverlay.style.display = 'none';
+    }
+
+    // リセットを実行（はい選択時）
+    function executeReset() {
+        hideConfirmReset();
+
+        // 現在のモードの記録だけを初期化
+        state.completedByMode[state.mode] = [];
+        
+        // その他の状態初期化
+        state.currentPrefecture = null;
+        state.currentHints = [];
+        state.hintStage = 0;
+        state.isFirstQuestion = true;
+
+        // マーカー再描画（全部消えるはず）
+        refreshMapMarkers();
+
+        // マップを初期位置へ
+        if (myMap) {
+            myMap.setView([36.2048, 138.2529], 5);
+            myMap.closePopup();
+        }
+
+        // 残り県数表示をリセット
+        updateRemainingCount();
+        
+        // フィードバック画面などが残っていたら消す
+        dom.feedbackOverlay.style.display = 'none';
+        
+        // スタート画面は表示しない
+        dom.startOverlay.style.display = 'none';
+
+        // 次の問題（1問目）を開始
+        nextQuestion();
+    }
+
+    // マーカーを現在のモードに合わせて再描画
+    function refreshMapMarkers() {
+        if (!myMap) return;
+
+        // 既存の履歴マーカーを全削除
+        if (state.markers) {
+            state.markers.forEach(m => myMap.removeLayer(m));
+        }
+        state.markers = [];
+
+        // 現在のアクティブマーカー（正解時のポップアップ用）も一旦削除
+        if (myMarker) {
+            myMap.removeLayer(myMarker);
+            myMarker = null;
+        }
+
+        // 現在のモードでクリア済みの県のマーカーを追加
+        const completedIds = state.currentCompleted;
+        completedIds.forEach(id => {
+            const pref = prefectures.find(p => p.id === id);
+            if (pref) {
+                var icon = createFlagIcon(pref.region);
+                var marker = L.marker([pref.lat, pref.lng], { icon: icon }).addTo(myMap).bindPopup(pref.name);
+                state.markers.push(marker);
+            }
+        });
+    }
+
+    function updateRemainingCount() {
+        const remaining = prefectures.length - state.currentCompleted.length;
+        dom.remaining.innerText = remaining;
+    }
+
+    // Initialize Leaflet Map
+    function initLeafletMap() {
+        if(myMap) return;
+
+        myMap = L.map('leaflet-map').setView([36.2048, 138.2529], 5);
+
+        // 国土地理院 白地図
+        L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/blank/{z}/{x}/{y}.png', {
+            attribution: "&copy; <a href='https://maps.gsi.go.jp/development/ichiran.html' target='_blank'>地理院タイル</a>",
+            maxZoom: 18
+        }).addTo(myMap);
+        
+        // オーバーレイのフェードアウト処理
+        setTimeout(() => {
+            var overlay = document.getElementById('map-overlay');
+            if(overlay) {
+                overlay.classList.add('fade-out');
+                setTimeout(() => {
+                    overlay.style.display = 'none';
+                }, 500); 
+            }
+        }, 3000);
+    }
+
+    function createFlagIcon(region) {
+        var color = regionColors[region] || "#EA5549";
+        var svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path d="M4 2 v20 M4 2 l14 7 l-14 7" fill="${color}" stroke="#333" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></svg>`;
+        return L.divIcon({
+            className: "custom-flag",
+            html: svg,
+            iconSize: [24, 24],
+            iconAnchor: [2, 22],
+            popupAnchor: [0, -24]
+        });
+    }
+
+    function handleMainButton() {
+        showNextHint();
+    }
+
+    function nextQuestion() {
+        // Reset UI
+        dom.feedbackOverlay.style.display = 'none';
+        dom.hint1.classList.remove('visible');
+        dom.hint2.classList.remove('visible');
+        dom.hint3.classList.remove('visible');
+        
+        dom.btnNextPanel.style.display = 'none';
+        dom.btnNextHint.style.display = 'block';
+        dom.btnGmapLink.style.display = 'none';
+        
+        if(myMap) myMap.closePopup();
+        if(myMap) myMap.setView([36.2048, 138.2529], 5);
+
+        // 現在のモードでまだクリアしていない県を抽出
+        var remainingIds = prefectures.map(p => p.id).filter(id => !state.currentCompleted.includes(id));
+        
+        if (remainingIds.length === 0) {
+            gameClear();
+            return;
+        }
+
+        updateRemainingCount();
+
+        var nextId = remainingIds[Math.floor(Math.random() * remainingIds.length)];
+        state.currentPrefecture = prefectures.find(p => p.id === nextId);
+        
+        // Pick random 3 hints
+        var allHints = state.currentPrefecture.hints[state.mode];
+        var shuffledHints = [...allHints].sort(() => 0.5 - Math.random());
+        state.currentHints = shuffledHints.slice(0, 3);
+        
+        state.hintStage = 0;
+        
+        dom.btnNextHint.classList.remove('btn-start-game');
+        dom.btnNextHint.innerText = "💡 もっとヒントをみる";
+        
+        showNextHint();
+        generateChoices(false);
+    }
+
+    function showNextHint() {
+        state.hintStage++;
+        
+        if (state.hintStage === 1) {
+            dom.text1.innerText = state.currentHints[0];
+            dom.hint1.classList.add('visible');
+        } else if (state.hintStage === 2) {
+            dom.text2.innerText = state.currentHints[1];
+            dom.hint2.classList.add('visible');
+        } else if (state.hintStage === 3) {
+            dom.text3.innerText = state.currentHints[2];
+            dom.hint3.classList.add('visible');
+            dom.btnNextHint.style.display = 'none'; 
+        }
+    }
+
+    function generateChoices(disableClick) {
+        dom.choices.innerHTML = "";
+        
+        var correct = state.currentPrefecture;
+        
+        var shuffleArray = (array) => {
+            var newArray = [...array];
+            for (let i = newArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+            }
+            return newArray;
+        };
+
+        var rivalPrefs = [];
+        if (correct.rivals) {
+            rivalPrefs = prefectures.filter(p => correct.rivals.includes(p.id));
+        }
+        var sameRegionPrefs = prefectures.filter(p => p.region === correct.region && p.id !== correct.id && !correct.rivals?.includes(p.id));
+        var otherRegionPrefs = prefectures.filter(p => p.region !== correct.region && !correct.rivals?.includes(p.id));
+
+        var shuffledRivals = shuffleArray(rivalPrefs);
+        var shuffledSame = shuffleArray(sameRegionPrefs);
+        var shuffledOther = shuffleArray(otherRegionPrefs);
+
+        var wrongChoices = [];
+        wrongChoices = wrongChoices.concat(shuffledRivals);
+        if (wrongChoices.length < 3) {
+            var needed = 3 - wrongChoices.length;
+            wrongChoices = wrongChoices.concat(shuffledSame.slice(0, needed));
+        }
+        if (wrongChoices.length < 3) {
+            var needed = 3 - wrongChoices.length;
+            wrongChoices = wrongChoices.concat(shuffledOther.slice(0, needed));
+        }
+        wrongChoices = wrongChoices.slice(0, 3);
+
+        var options = shuffleArray([correct, ...wrongChoices]);
+        var colorClasses = ['red', 'blue', 'green', 'orange'];
+
+        options.forEach((opt, index) => {
+            var btn = document.createElement('button');
+            btn.className = `btn-choice ${colorClasses[index]}`; 
+            btn.innerText = opt.name;
+            if (!disableClick) {
+                btn.onclick = (e) => checkAnswer(opt.id, e.target);
+            } else {
+                btn.style.cursor = "default";
+                btn.style.opacity = "0.7";
+            }
+            dom.choices.appendChild(btn);
+        });
+    }
+
+    function checkAnswer(selectedId, btnElement) {
+        if (selectedId === state.currentPrefecture.id) {
+            playCorrectSound();
+            // 現在のモードのクリアリストに追加
+            state.currentCompleted.push(selectedId);
+            showFeedback(true);
+        } else {
+            playWrongSound();
+            if(btnElement) {
+                btnElement.classList.add('wrong');
+                btnElement.onclick = null; 
+            }
+        }
+    }
+
+    function showFeedback(isCorrect) {
+        dom.feedbackOverlay.style.display = 'flex';
+        
+        if (isCorrect) {
+            dom.feedbackTitle.innerText = "⭕ せいかい！";
+            dom.feedbackTitle.style.color = "#FF6F61";
+            dom.feedbackDesc.innerHTML = `${state.currentPrefecture.name}をゲットしたよ！<br>「地図を見る」をおして場所をかくにんしよう！`;
+            
+            dom.btnModalAction.innerText = "地図を見る";
+            dom.btnModalAction.onclick = () => {
+                dom.feedbackOverlay.style.display = 'none';
+                showRealMap(state.currentPrefecture);
+                dom.btnNextHint.style.display = 'none';
+                dom.btnNextPanel.style.display = 'block';
+            };
+        }
+    }
+
+    function showRealMap(pref) {
+        dom.btnGmapLink.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(pref.name)}`;
+        dom.btnGmapLink.style.display = 'inline-block';
+        
+        setTimeout(() => {
+            myMap.invalidateSize();
+            myMap.setView([pref.lat, pref.lng], 8);
+            
+            var icon = createFlagIcon(pref.region);
+            
+            // 正解時のマーカー追加（これも履歴に残るようにstate.markersに追加）
+            myMarker = L.marker([pref.lat, pref.lng], { icon: icon }).addTo(myMap)
+                .bindPopup(pref.name)
+                .openPopup();
+                
+            state.markers.push(myMarker);
+        }, 100);
+    }
+
+    // --- Fanfare & Confetti ---
+
+    function gameClear() {
+        dom.feedbackOverlay.style.display = 'flex';
+        dom.feedbackTitle.innerText = "🎉 全国制覇！ 🎉";
+        dom.feedbackTitle.style.color = "#FFD166";
+        dom.feedbackDesc.innerHTML = "おめでとう！<br>47都道府県すべて正解しました！<br>あなたは日本地図マスターです！";
+        
+        dom.btnModalAction.innerText = "もう一度あそぶ";
+        dom.btnModalAction.onclick = () => location.reload(); // 本当のリロードでOK
+
+        playFanfare();
+        startConfetti();
+    }
+
+    function startConfetti() {
+        var colors = ['#FFC107', '#FF5722', '#E91E63', '#9C27B0', '#2196F3', '#4CAF50', '#8BC34A'];
+        
+        for (let i = 0; i < 150; i++) {
+            confettiParticles.push({
+                x: Math.random() * confettiCanvas.width,
+                y: Math.random() * confettiCanvas.height - confettiCanvas.height,
+                w: Math.random() * 10 + 5,
+                h: Math.random() * 10 + 5,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                vy: Math.random() * 2 + 2,
+                vx: Math.random() * 2 - 1,
+                rotation: Math.random() * 360,
+                rs: Math.random() * 5 - 2.5
+            });
+        }
+        
+        if (!confettiAnimationId) {
+            animateConfetti();
+        }
+    }
+
+    function animateConfetti() {
+        confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+        
+        confettiParticles.forEach((p, i) => {
+            p.y += p.vy;
+            p.x += p.vx;
+            p.rotation += p.rs;
+            
+            confettiCtx.save();
+            confettiCtx.translate(p.x, p.y);
+            confettiCtx.rotate(p.rotation * Math.PI / 180);
+            confettiCtx.fillStyle = p.color;
+            confettiCtx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+            confettiCtx.restore();
+            
+            if (p.y > confettiCanvas.height) {
+                p.y = -20;
+                p.x = Math.random() * confettiCanvas.width;
+            }
+        });
+        
+        confettiAnimationId = requestAnimationFrame(animateConfetti);
+    }
+</script>
+
+</body>
+</html>
